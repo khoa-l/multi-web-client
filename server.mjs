@@ -16,12 +16,11 @@ const PORT = process.env.PORT || 3001;
 
 // Reddit OAuth configuration
 const REDDIT_CONFIG = {
-  clientId: process.env.REDDIT_CLIENT_ID || "i3It5V7LR6o2s5BCTy-82A",
-  clientSecret:
-    process.env.REDDIT_CLIENT_SECRET || "6m2RxtVnEPLTVBePLSZULLxCiA_GJA",
+  clientId: process.env.REDDIT_CLIENT_ID,
+  clientSecret: process.env.REDDIT_CLIENT_SECRET,
   redirectUri:
     process.env.REDDIT_REDIRECT_URI || "http://localhost:3001/auth/callback",
-  userAgent: "RedditClient/1.0 by YourUsername",
+  userAgent: "RedditClient/1.0 by Accomplished_Key4575",
 };
 
 // Rate limiting configuration
