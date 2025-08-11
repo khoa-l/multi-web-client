@@ -16,11 +16,12 @@ const PORT = process.env.PORT || 3001;
 
 // Reddit OAuth configuration
 const REDDIT_CONFIG = {
-  clientId: process.env.REDDIT_CLIENT_ID,
-  clientSecret: process.env.REDDIT_CLIENT_SECRET,
+  clientId: process.env.REDDIT_CLIENT_ID || "i3It5V7LR6o2s5BCTy-82A",
+  clientSecret:
+    process.env.REDDIT_CLIENT_SECRET || "6m2RxtVnEPLTVBePLSZULLxCiA_GJA",
   redirectUri:
     process.env.REDDIT_REDIRECT_URI || "http://localhost:3001/auth/callback",
-  userAgent: "RedditClient/1.0 by Accomplished_Key4575",
+  userAgent: "RedditClient/1.0 by YourUsername",
 };
 
 // Rate limiting configuration
@@ -129,10 +130,11 @@ app.get("/", (req, res) => {
 app.get("/auth/login", (req, res) => {
   const state = crypto.randomBytes(16).toString("hex");
 
-  // Store state for validation
+  // Store state for validation - use 'created' consistently
   const tempSession = {
     state,
-    timestamp: Date.now(),
+    created: Date.now(), // ← Fixed: now uses 'created'
+    isTemp: true, // ← Added: mark as temporary
   };
   sessions.set(state, tempSession);
 
@@ -374,13 +376,43 @@ app.get("/health", (req, res) => {
 
 // Admin endpoint to see active sessions (remove in production)
 app.get("/admin/sessions", (req, res) => {
-  const sessionList = Array.from(sessions.entries()).map(([id, session]) => ({
-    id: id.substring(0, 8) + "...",
-    username: session.username,
-    created: new Date(session.created).toISOString(),
-  }));
+  try {
+    const sessionList = Array.from(sessions.entries()).map(([id, session]) => {
+      // Safely handle potentially invalid timestamps
+      let createdISO = "Invalid Date";
+      try {
+        if (session.created && typeof session.created === "number") {
+          createdISO = new Date(session.created).toISOString();
+        } else if (session.created) {
+          createdISO = new Date(session.created).toISOString();
+        }
+      } catch (dateError) {
+        createdISO = `Invalid: ${session.created}`;
+      }
 
-  res.json({ sessions: sessionList });
+      return {
+        id: id.substring(0, 8) + "...",
+        username: session.username || "unknown",
+        created: createdISO,
+        userId: session.userId || "unknown",
+        rawCreated: session.created, // For debugging
+      };
+    });
+
+    res.json({
+      sessions: sessionList,
+      totalSessions: sessions.size,
+      totalUsers: userTokens.size,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Admin endpoint error:", error);
+    res.status(500).json({
+      error: "Admin endpoint failed",
+      message: error.message,
+      sessionsCount: sessions.size,
+    });
+  }
 });
 
 // Error handling
@@ -395,6 +427,29 @@ app.use((error, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({ error: "Endpoint not found" });
 });
+
+// Clean up invalid sessions on startup
+function cleanupSessions() {
+  let cleaned = 0;
+  for (const [sessionId, session] of sessions.entries()) {
+    // Remove sessions with invalid timestamps or temp sessions older than 1 hour
+    if (
+      !session.created ||
+      (session.isTemp && Date.now() - session.created > 3600000) ||
+      typeof session.created !== "number"
+    ) {
+      sessions.delete(sessionId);
+      cleaned++;
+    }
+  }
+  if (cleaned > 0) {
+    console.log(`Cleaned up ${cleaned} invalid sessions`);
+  }
+}
+
+// Run cleanup on server start and periodically
+cleanupSessions();
+setInterval(cleanupSessions, 300000); // Every 5 minutes
 
 app.listen(PORT, () => {
   console.log(`🚀 Reddit OAuth Backend Server (ESM) running on port ${PORT}`);
