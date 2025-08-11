@@ -1,0 +1,23 @@
+{
+  "name": "reddit-multi-user",
+  "version": "1.0.0",
+  "description": "Multi-user Reddit client",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "nodemon server.mjs"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "node-fetch": "^3.3.2"
+  },
+  "keywords": [
+    "reddit",
+    "oauth",
+    "feeds"
+  ],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,1073 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reddit Client - Multi-User</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: sans-serif;
+        background-color: #f8f9fa;
+        color: #1a1a1b;
+        line-height: 1.4;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #ff4500 0%, #ff6b35 100%);
+        color: white;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .header h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.875rem;
+      }
+
+      .user-info .username {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+      }
+
+      .requests-counter {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+      }
+
+      .auth-section {
+        text-align: center;
+        padding: 3rem 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .auth-section h2 {
+        margin-bottom: 1rem;
+        color: #1a1a1b;
+      }
+
+      .auth-section p {
+        margin-bottom: 2rem;
+        color: #666;
+      }
+
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .btn-primary {
+        background: #ff4500;
+        color: white;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: #cc3700;
+      }
+
+      .btn-secondary {
+        background: #e9ecef;
+        color: #495057;
+        margin-left: 0.5rem;
+      }
+
+      .btn-secondary:hover:not(:disabled) {
+        background: #dee2e6;
+      }
+
+      .btn-danger {
+        background: #dc3545;
+        color: white;
+      }
+
+      .btn-danger:hover:not(:disabled) {
+        background: #c82333;
+      }
+
+      .feeds-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+      }
+
+      .feeds-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+      }
+
+      .feeds-header h2 {
+        color: #1a1a1b;
+      }
+
+      .feed-item {
+        padding: 1rem;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #fff;
+      }
+
+      .feed-item:hover {
+        border-color: #ff4500;
+        box-shadow: 0 2px 8px rgba(255, 69, 0, 0.15);
+        background: #fefefe;
+      }
+
+      .feed-item:active {
+        transform: translateY(1px);
+      }
+
+      .feed-name {
+        font-weight: 600;
+        color: #1a1a1b;
+        margin-bottom: 0.25rem;
+      }
+
+      .feed-details {
+        color: #666;
+        font-size: 0.875rem;
+      }
+
+      .no-feeds {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #666;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #e9ecef;
+        border-radius: 50%;
+        border-top-color: #ff4500;
+        animation: spin 1s linear infinite;
+        margin-right: 0.5rem;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 1rem;
+        border-radius: 6px;
+        margin: 1rem 0;
+        border: 1px solid #f5c6cb;
+      }
+
+      .posts-container {
+        margin-top: 2rem;
+      }
+
+      .posts-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .posts-header h3 {
+        color: #1a1a1b;
+        margin: 0;
+      }
+
+      .back-btn {
+        background: #6c757d;
+        color: white;
+      }
+
+      .back-btn:hover:not(:disabled) {
+        background: #545b62;
+      }
+
+      .post-item {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border-left: 3px solid #ff4500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        gap: 1rem;
+      }
+
+      .post-item:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+      }
+
+      .post-content-wrapper {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .post-thumbnail {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 6px;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .post-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #1a1a1b;
+      }
+
+      .post-meta {
+        color: #666;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .post-content {
+        color: #666;
+        font-size: 0.875rem;
+      }
+
+      .posts-loading {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #666;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .load-more-container {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-top: 1rem;
+      }
+
+      .load-more-btn {
+        background: #28a745;
+        color: white;
+        padding: 1rem 2rem;
+        font-size: 1rem;
+      }
+
+      .load-more-btn:hover:not(:disabled) {
+        background: #218838;
+      }
+
+      .load-more-btn:disabled {
+        background: #6c757d;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem 0.5rem;
+        }
+
+        .header {
+          flex-direction: column;
+          gap: 0.5rem;
+          text-align: center;
+        }
+
+        .feeds-header {
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .posts-header {
+          flex-direction: column;
+          gap: 1rem;
+          text-align: center;
+        }
+
+        .btn {
+          margin: 0.25rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Read-Only Reddit Research Client</h1>
+      <div id="user-info" class="user-info" style="display: none">
+        <div class="requests-counter" id="requests-counter">
+          <span id="requests-text">0/60 requests</span>
+        </div>
+        <div class="username" id="username-display"></div>
+        <button
+          id="logout-btn"
+          class="btn btn-secondary"
+          style="padding: 0.5rem 1rem; margin: 0"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- Authentication Section -->
+      <div id="auth-section" class="auth-section">
+        <h2>Connect to Reddit</h2>
+        <p>
+          Connect your Reddit account to view your custom feeds and browse
+          content.
+        </p>
+        <div id="error-message" class="error" style="display: none"></div>
+        <a href="/auth/login" class="btn btn-primary">
+          Connect Reddit Account
+        </a>
+      </div>
+
+      <!-- Feeds Section -->
+      <div id="feeds-section" class="feeds-container" style="display: none">
+        <div class="feeds-header">
+          <h2>Your Custom Feeds</h2>
+          <div>
+            <button id="refresh-btn" class="btn btn-primary">Refresh</button>
+          </div>
+        </div>
+        <div id="feeds-list"></div>
+      </div>
+
+      <!-- Posts Section -->
+      <div id="posts-section" class="posts-container" style="display: none">
+        <div class="posts-header">
+          <div>
+            <h3 id="posts-title">Feed Content</h3>
+            <div
+              id="last-refresh-time"
+              style="color: #666; font-size: 0.75rem; margin-top: 0.25rem"
+            ></div>
+          </div>
+          <div>
+            <button id="refresh-posts-btn" class="btn btn-primary">
+              Refresh
+            </button>
+            <button id="toggle-polling-btn" class="btn btn-primary">
+              Auto-refresh
+            </button>
+            <button id="back-btn" class="btn back-btn">← Back to Feeds</button>
+          </div>
+        </div>
+        <div id="posts-list"></div>
+        <div
+          id="load-more-container"
+          class="load-more-container"
+          style="display: none"
+        >
+          <button id="load-more-btn" class="btn load-more-btn">
+            Load More Posts
+          </button>
+          <div
+            id="load-more-info"
+            style="margin-top: 0.5rem; color: #666; font-size: 0.875rem"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      class RedditClient {
+        constructor() {
+          this.sessionId = null;
+          this.username = null;
+          this.currentFeedPath = null;
+          this.currentFeedName = null;
+          this.currentAfter = null; // For pagination
+          this.allPosts = []; // Store all loaded posts
+          this.pollInterval = null;
+          this.pollingEnabled = false;
+          this.lastUpdateTime = null;
+          this.rateLimitStatus = null;
+
+          this.init();
+        }
+
+        init() {
+          this.bindEvents();
+          this.checkSessionFromUrl();
+          this.checkAuthStatus();
+          this.handleErrors();
+          this.startRateLimitMonitoring();
+        }
+
+        bindEvents() {
+          document
+            .getElementById("refresh-btn")
+            .addEventListener("click", () => this.loadFeeds());
+          document
+            .getElementById("logout-btn")
+            .addEventListener("click", () => this.logout());
+          document
+            .getElementById("back-btn")
+            .addEventListener("click", () => this.showFeedsOnly());
+          document
+            .getElementById("refresh-posts-btn")
+            .addEventListener("click", () => this.refreshCurrentFeed());
+          document
+            .getElementById("toggle-polling-btn")
+            .addEventListener("click", () => this.togglePolling());
+          document
+            .getElementById("load-more-btn")
+            .addEventListener("click", () => this.loadMorePosts());
+        }
+
+        startRateLimitMonitoring() {
+          // Check rate limit status every 15 seconds
+          setInterval(() => {
+            if (this.sessionId) {
+              this.checkRateLimit();
+            }
+          }, 15000);
+        }
+
+        async checkRateLimit() {
+          try {
+            const response = await fetch("/api/rate-limit");
+            if (response.ok) {
+              const data = await response.json();
+              this.rateLimitStatus = data;
+              this.updateRequestsCounter(data);
+            }
+          } catch (error) {
+            console.error("Failed to check rate limit:", error);
+          }
+        }
+
+        updateRequestsCounter(rateLimitData) {
+          const counter = document.getElementById("requests-counter");
+          const text = document.getElementById("requests-text");
+
+          if (counter && text) {
+            text.textContent = `${rateLimitData.current}/${rateLimitData.max} requests`;
+          }
+        }
+
+        checkSessionFromUrl() {
+          const urlParams = new URLSearchParams(window.location.search);
+          const session = urlParams.get("session");
+          const username = urlParams.get("username");
+
+          if (session && username) {
+            this.sessionId = session;
+            this.username = username;
+            // Clean URL
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname,
+            );
+          }
+        }
+
+        handleErrors() {
+          const urlParams = new URLSearchParams(window.location.search);
+          const error = urlParams.get("error");
+
+          if (error) {
+            this.showError(`Authentication failed: ${error}`);
+            // Clean URL
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname,
+            );
+          }
+        }
+
+        async checkAuthStatus() {
+          if (!this.sessionId) {
+            this.showAuthSection();
+            return;
+          }
+
+          try {
+            const response = await fetch("/auth/me", {
+              headers: {
+                "X-Session-ID": this.sessionId,
+              },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              this.username = data.session.username;
+              this.showUserInfo();
+              this.showFeedsSection();
+              this.loadFeeds();
+            } else {
+              this.sessionId = null;
+              this.showAuthSection();
+            }
+          } catch (error) {
+            console.error("Auth check failed:", error);
+            this.sessionId = null;
+            this.showAuthSection();
+          }
+        }
+
+        async logout() {
+          if (!this.sessionId) return;
+
+          try {
+            await fetch("/auth/logout", {
+              method: "POST",
+              headers: {
+                "X-Session-ID": this.sessionId,
+              },
+            });
+          } catch (error) {
+            console.error("Logout error:", error);
+          }
+
+          this.sessionId = null;
+          this.username = null;
+          this.stopPolling();
+          this.showAuthSection();
+        }
+
+        async loadFeeds() {
+          if (!this.sessionId) return;
+
+          this.showLoading("Loading your feeds...");
+
+          try {
+            const response = await fetch("/api/reddit/api/multi/mine", {
+              headers: {
+                "X-Session-ID": this.sessionId,
+              },
+            });
+
+            if (response.status === 429) {
+              throw new Error(
+                "Rate limit exceeded. Please wait before making more requests.",
+              );
+            }
+
+            if (!response.ok) {
+              throw new Error("Failed to fetch feeds");
+            }
+
+            const feeds = await response.json();
+            this.displayFeeds(feeds);
+          } catch (error) {
+            console.error("Feed loading error:", error);
+            this.showError("Failed to load feeds: " + error.message);
+          }
+        }
+
+        async loadFeedPosts(feedPath, feedName, after = null) {
+          if (!this.sessionId) return;
+
+          // Always show the posts section when loading a feed
+          this.showPostsSection(feedName);
+
+          // Reset pagination if this is a new feed OR if no after parameter (fresh load)
+          const isNewFeed = feedPath !== this.currentFeedPath;
+          const isFreshLoad = !after;
+
+          if (isNewFeed || isFreshLoad) {
+            this.currentFeedPath = feedPath;
+            this.currentFeedName = feedName;
+
+            if (isFreshLoad) {
+              // Only reset pagination and posts for fresh loads
+              this.currentAfter = null;
+              this.allPosts = [];
+            }
+
+            this.showPostsLoading("Loading posts...");
+          }
+
+          try {
+            let jsonPath;
+            if (!feedPath || feedPath === "") {
+              jsonPath = ".json";
+            } else {
+              const cleanPath = feedPath.startsWith("/")
+                ? feedPath.slice(1)
+                : feedPath;
+              jsonPath = cleanPath.endsWith(".json")
+                ? cleanPath
+                : cleanPath + ".json";
+            }
+
+            // Add pagination parameters
+            const url = new URL(
+              `/api/reddit/${jsonPath}`,
+              window.location.origin,
+            );
+            if (after) {
+              url.searchParams.append("after", after);
+            }
+            url.searchParams.append("limit", "25"); // Load 25 posts at a time
+
+            const response = await fetch(url.toString(), {
+              headers: {
+                "X-Session-ID": this.sessionId,
+              },
+            });
+
+            if (response.status === 429) {
+              throw new Error(
+                "Rate limit exceeded. Please wait before making more requests.",
+              );
+            }
+
+            if (!response.ok) {
+              throw new Error("Failed to fetch posts");
+            }
+
+            const data = await response.json();
+            const newPosts = data.data.children;
+
+            // Store pagination info
+            this.currentAfter = data.data.after;
+
+            if (after) {
+              // Append to existing posts
+              this.allPosts = [...this.allPosts, ...newPosts];
+            } else {
+              // New feed load
+              this.allPosts = newPosts;
+            }
+
+            this.displayPosts(this.allPosts);
+            this.updateLoadMoreButton();
+            this.lastUpdateTime = new Date();
+            this.updateLastRefreshTime();
+          } catch (error) {
+            this.showPostsError("Failed to load posts: " + error.message);
+          }
+        }
+
+        async loadMorePosts() {
+          if (!this.currentAfter || !this.sessionId) {
+            return;
+          }
+
+          const loadMoreBtn = document.getElementById("load-more-btn");
+          const originalText = loadMoreBtn.textContent;
+
+          loadMoreBtn.disabled = true;
+          loadMoreBtn.innerHTML =
+            '<span class="spinner"></span>Loading more...';
+
+          try {
+            await this.loadFeedPosts(
+              this.currentFeedPath,
+              this.currentFeedName,
+              this.currentAfter,
+            );
+          } catch (error) {
+            console.error("Load more error:", error);
+            this.showPostsError("Failed to load more posts: " + error.message);
+          } finally {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.textContent = originalText;
+          }
+        }
+
+        updateLoadMoreButton() {
+          const container = document.getElementById("load-more-container");
+          const btn = document.getElementById("load-more-btn");
+          const info = document.getElementById("load-more-info");
+
+          if (this.currentAfter && this.allPosts.length > 0) {
+            container.style.display = "block";
+            btn.disabled = false;
+            info.textContent = `Loaded ${this.allPosts.length} posts. Click to load more.`;
+          } else if (this.allPosts.length > 0) {
+            container.style.display = "block";
+            btn.disabled = true;
+            btn.textContent = "No more posts";
+            info.textContent = `All ${this.allPosts.length} posts loaded.`;
+          } else {
+            container.style.display = "none";
+          }
+        }
+
+        displayFeeds(feeds) {
+          const feedsList = document.getElementById("feeds-list");
+          feedsList.innerHTML = "";
+
+          // Add default feeds first
+          const defaultFeeds = [
+            {
+              name: "Home",
+              path: "",
+              description: "Your personalized feed",
+            },
+            {
+              name: "Popular",
+              path: "r/popular",
+              description: "Popular posts across Reddit",
+            },
+            {
+              name: "All",
+              path: "r/all",
+              description: "All posts from Reddit",
+            },
+          ];
+
+          defaultFeeds.forEach((feed) => {
+            const feedItem = document.createElement("div");
+            feedItem.className = "feed-item";
+            feedItem.innerHTML = `
+              <div class="feed-name">${feed.name}</div>
+              <div class="feed-details">${feed.description}</div>
+            `;
+
+            feedItem.addEventListener("click", () => {
+              this.loadFeedPosts(feed.path, feed.name);
+            });
+
+            feedsList.appendChild(feedItem);
+          });
+
+          // Add separator if there are custom feeds
+          if (feeds && feeds.length > 0) {
+            const separator = document.createElement("div");
+            separator.style.cssText =
+              "margin: 1.5rem 0 1rem 0; padding-top: 1rem; border-top: 1px solid #e9ecef;";
+            separator.innerHTML = `
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="color: #1a1a1b; margin: 0;">Custom Feeds</h4>
+                <a href="https://www.reddit.com/" target="_blank" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.5rem 0.75rem;">
+                  Manage Feeds
+                </a>
+              </div>
+            `;
+            feedsList.appendChild(separator);
+
+            // Add custom feeds
+            feeds.forEach((feed) => {
+              const feedItem = document.createElement("div");
+              feedItem.className = "feed-item";
+
+              const feedName = this.decodeHtml(feed.data.display_name);
+              const subredditCount = feed.data.subreddits.length;
+
+              feedItem.innerHTML = `
+                <div class="feed-name">${feedName}</div>
+                <div class="feed-details">${subredditCount} subreddits</div>
+              `;
+
+              feedItem.addEventListener("click", () => {
+                this.loadFeedPosts(feed.data.path, feedName);
+              });
+
+              feedsList.appendChild(feedItem);
+            });
+          } else {
+            const noCustomFeeds = document.createElement("div");
+            noCustomFeeds.style.cssText =
+              "margin: 1.5rem 0 1rem 0; padding-top: 1rem; border-top: 1px solid #e9ecef; text-align: center;";
+            noCustomFeeds.innerHTML = `
+              <div style="color: #666; margin-bottom: 1rem;">
+                <p>No custom feeds found.</p>
+                <p style="font-size: 0.875rem;">Create multireddits to organize your favorite subreddits!</p>
+              </div>
+              <a href="https://www.reddit.com" target="_blank" class="btn btn-primary">
+                Create & Manage Feeds
+              </a>
+            `;
+            feedsList.appendChild(noCustomFeeds);
+          }
+        }
+
+        displayPosts(posts) {
+          const postsList = document.getElementById("posts-list");
+          postsList.innerHTML = "";
+
+          if (!posts || posts.length === 0) {
+            postsList.innerHTML =
+              '<div class="no-feeds"><p>No posts found in this feed.</p></div>';
+            return;
+          }
+
+          posts.forEach((post) => {
+            const postData = post.data;
+            const postItem = document.createElement("div");
+            postItem.className = "post-item";
+
+            const title = this.decodeHtml(postData.title);
+            const selftext = postData.selftext
+              ? this.decodeHtml(postData.selftext)
+              : "";
+
+            let postContent = "";
+            let imageContent = "";
+
+            // Handle images
+            if (
+              postData.preview &&
+              postData.preview.images &&
+              postData.preview.images[0]
+            ) {
+              const imageUrl = postData.preview.images[0].source.url.replace(
+                /&amp;/g,
+                "&",
+              );
+              imageContent = `<img src="${imageUrl}" class="post-thumbnail" onclick="event.stopPropagation(); window.open('${imageUrl}', '_blank')" alt="Post image">`;
+            } else if (
+              postData.url &&
+              (postData.url.match(/\.(jpeg|jpg|gif|png)$/i) ||
+                postData.domain === "i.redd.it")
+            ) {
+              imageContent = `<img src="${postData.url}" class="post-thumbnail" onclick="window.open('${postData.url}', '_blank')" alt="Post image">`;
+            }
+
+            // Handle text content
+            if (selftext) {
+              postContent = `<div class="post-content">${selftext.substring(
+                0,
+                200,
+              )}${selftext.length > 200 ? "..." : ""}</div>`;
+            }
+
+            postItem.innerHTML = `
+              <div class="post-content-wrapper">
+                <div class="post-title">${title}</div>
+                <div class="post-meta">
+                  r/${postData.subreddit} • ${postData.ups} upvotes • ${postData.num_comments} comments
+                </div>
+                ${postContent}
+              </div>
+              ${imageContent}
+            `;
+
+            postItem.addEventListener("click", () => {
+              window.open(`https://reddit.com${postData.permalink}`, "_blank");
+            });
+
+            postsList.appendChild(postItem);
+          });
+        }
+
+        showAuthSection() {
+          document.getElementById("auth-section").style.display = "block";
+          document.getElementById("feeds-section").style.display = "none";
+          document.getElementById("posts-section").style.display = "none";
+          document.getElementById("user-info").style.display = "none";
+        }
+
+        showFeedsSection() {
+          document.getElementById("auth-section").style.display = "none";
+          document.getElementById("feeds-section").style.display = "block";
+          document.getElementById("posts-section").style.display = "none";
+        }
+
+        showFeedsOnly() {
+          document.getElementById("posts-section").style.display = "none";
+          document.getElementById("feeds-section").style.display = "block";
+          this.stopPolling();
+        }
+
+        showPostsSection(feedName) {
+          document.getElementById("posts-section").style.display = "block";
+          document.getElementById("feeds-section").style.display = "none";
+          document.getElementById("posts-title").textContent =
+            feedName || "Feed Content";
+          this.updateLastRefreshTime();
+        }
+
+        showUserInfo() {
+          if (this.username) {
+            document.getElementById(
+              "username-display",
+            ).textContent = `u/${this.username}`;
+            document.getElementById("user-info").style.display = "flex";
+          }
+        }
+
+        showLoading(message) {
+          const feedsList = document.getElementById("feeds-list");
+          feedsList.innerHTML = `<div class="loading"><span class="spinner"></span>${message}</div>`;
+        }
+
+        showPostsLoading(message) {
+          const postsList = document.getElementById("posts-list");
+          postsList.innerHTML = `<div class="posts-loading"><span class="spinner"></span>${message}</div>`;
+          document.getElementById("load-more-container").style.display = "none";
+        }
+
+        showError(message) {
+          const errorDiv = document.getElementById("error-message");
+          errorDiv.innerHTML = message;
+          errorDiv.style.display = "block";
+
+          const feedsList = document.getElementById("feeds-list");
+          if (feedsList) {
+            feedsList.innerHTML = `<div class="error">${message}</div>`;
+          }
+        }
+
+        showPostsError(message) {
+          const postsList = document.getElementById("posts-list");
+          postsList.innerHTML = `<div class="error">${message}</div>`;
+          document.getElementById("load-more-container").style.display = "none";
+        }
+
+        // Helper function to decode HTML entities
+        decodeHtml(html) {
+          if (!html) return "";
+          const txt = document.createElement("textarea");
+          txt.innerHTML = html;
+          return txt.value;
+        }
+
+        // Polling functionality
+        startPolling() {
+          if (this.pollInterval) return;
+
+          this.pollingEnabled = true;
+          this.pollInterval = setInterval(() => {
+            if (this.currentFeedPath && this.sessionId) {
+              console.log("Auto-refreshing posts...");
+              this.refreshCurrentFeed(true);
+            }
+          }, 120000); // Poll every 2 minutes
+
+          this.updatePollingButton();
+        }
+
+        stopPolling() {
+          if (this.pollInterval) {
+            clearInterval(this.pollInterval);
+            this.pollInterval = null;
+          }
+          this.pollingEnabled = false;
+          this.updatePollingButton();
+        }
+
+        togglePolling() {
+          if (this.pollingEnabled) {
+            this.stopPolling();
+          } else {
+            this.startPolling();
+          }
+        }
+
+        updatePollingButton() {
+          const btn = document.getElementById("toggle-polling-btn");
+          if (btn) {
+            btn.textContent = this.pollingEnabled
+              ? "Stop Auto-refresh"
+              : "Auto-refresh";
+            btn.className = this.pollingEnabled
+              ? "btn btn-secondary"
+              : "btn btn-primary";
+          }
+        }
+
+        async refreshCurrentFeed(silent = false) {
+          if (!this.currentFeedPath || !this.sessionId) return;
+
+          if (!silent) {
+            this.showPostsLoading("Refreshing posts...");
+          }
+
+          try {
+            // Reset pagination and reload from beginning
+            this.currentAfter = null;
+            this.allPosts = [];
+
+            await this.loadFeedPosts(
+              this.currentFeedPath,
+              this.currentFeedName,
+            );
+
+            if (!silent) {
+              const successMsg = document.createElement("div");
+              successMsg.style.cssText =
+                "position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 0.5rem 1rem; border-radius: 4px; z-index: 1000;";
+              successMsg.textContent = "Posts refreshed!";
+              document.body.appendChild(successMsg);
+              setTimeout(() => successMsg.remove(), 2000);
+            }
+          } catch (error) {
+            if (!silent) {
+              this.showPostsError("Failed to refresh posts: " + error.message);
+            }
+            console.error("Auto-refresh failed:", error);
+          }
+        }
+
+        updateLastRefreshTime() {
+          const timeElement = document.getElementById("last-refresh-time");
+          if (timeElement && this.lastUpdateTime) {
+            const timeStr = this.lastUpdateTime.toLocaleTimeString();
+            timeElement.textContent = `Last updated: ${timeStr}`;
+          }
+        }
+      }
+
+      // Initialize the Reddit client when page loads
+      document.addEventListener("DOMContentLoaded", () => {
+        window.redditClient = new RedditClient();
+      });
+    </script>
+  </body>
+</html>
