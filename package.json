@@ -13,11 +13,14 @@
     "cors": "^2.8.5",
     "node-fetch": "^3.3.2"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "keywords": [
     "reddit",
     "oauth",
     "feeds"
   ],
-  "author": "",
+  "author": "Khoa Ly",
   "license": "MIT"
 }
